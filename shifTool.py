@@ -9,14 +9,16 @@ import platform
 import webbrowser
 import tkinter as tk
 from tkinter import filedialog
+import urllib.parse  # Biblioteca para higienização dos links
 
 # ==========================================
 # CONFIGURAÇÕES GERAIS E INTERNACIONALIZAÇÃO (i18n)
 # ==========================================
 THEME_COLOR = "#FF6B6B"
-CONFIG_FILE = "config.json"
+# Salva na pasta do usuário para evitar o "Permission denied"
+CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".shifTool_config.json")
 
-# Gerenciador de Dependências do Projeto (Atualizado)
+# Gerenciador de Dependências do Projeto
 REQUIRED_PACKAGES = {
     "yt_dlp": {"pkg": "yt-dlp", "size": "~15 MB"},
     "fitz": {"pkg": "pymupdf", "size": "~35 MB"},
@@ -45,7 +47,6 @@ CURRENT_LANG = load_initial_lang()
 
 I18N = {
     "pt": {
-        # Dependências de Inicialização
         "dep_warning_title": "[AVISO] Dependências ausentes detectadas:",
         "dep_warning_desc": "Para o funcionamento completo do shifTool, estes pacotes são necessários.",
         "dep_prompt": "Deseja baixar e instalar as dependências ausentes agora? [S/N]",
@@ -54,11 +55,11 @@ I18N = {
         "dep_success": "\n[bold green]✓ Dependências instaladas com sucesso![/bold green]\n",
         "dep_error": "\n[bold red]Erro ao instalar dependências automaticamente:[/] {error}",
         "dep_declined": "\n[bold yellow]Instalação recusada pelo usuário. Encerrando o aplicativo. Até logo![/bold yellow]\n",
+        "ffmpeg_warning_title": "[bold yellow]Aviso Amigável: FFmpeg não encontrado[/bold yellow]",
+        "ffmpeg_warning_desc": "O [bold]FFmpeg[/bold] não está instalado ou não foi encontrado no seu computador.\nEle é essencial para processar mídias, converter áudio/vídeo e evitar que o aplicativo quebre durante as conversões.\n\nPor favor, certifique-se de instalá-lo ou mantê-lo disponível no sistema para uma melhor experiência.",
         "config_save_error": "\n[bold red]Erro ao salvar arquivo de configuração:[/] {error}",
         "lo_convert_error": "Não foi possível realizar a conversão do documento.",
         "spreadsheet_error": "Erro ao processar a planilha/dados: {error}",
-
-        # Geral & Erros
         "invalid_choice": "[bold red]Opção inválida![/bold red] Escolha uma das opções disponíveis no menu.",
         "press_enter": "\nPressione [bold]Enter[/bold] para continuar...",
         "press_enter_menu": "\nPressione [bold]Enter[/bold] para retornar ao menu principal...",
@@ -66,26 +67,19 @@ I18N = {
         "goodbye": "\n[bold {theme}]Encerrando o shifTool. Até logo![/]",
         "interrupted": "\n\n[bold {theme}]Programa interrompido pelo usuário. Saindo...[/]",
         "op_canceled": "\n[bold {theme}]Operação cancelada pelo usuário. Retornando ao menu...[/]",
-        
-        # Menu Principal
         "menu_main_title": "[bold white]Menu Principal[/]",
         "menu_opt_1": " Transformador Universal de Documentos / Arquivos",
         "menu_opt_2": " Conversor de Mídia",
         "menu_opt_3": " Configurações",
         "menu_opt_4": " Sair / Encerrar o Aplicativo",
-
-        # Submenu - Conversor de Mídia
         "media_menu_title": "[bold white]Conversor de Mídia[/]",
-        "media_opt_1": " Converter mídia via link do YouTube",
+        "media_opt_1": " Converter mídia por Link (Multi-plataforma e Lote)",
         "media_opt_2": " Converter mídia local",
         "media_opt_0": " Voltar ao Menu Principal",
-        
         "local_media_title": "[bold white]Converter Mídia Local[/]",
         "local_media_desc": "Selecione um arquivo de vídeo do seu computador para extrair o áudio em MP3 de forma rápida e limpa.",
         "local_media_prompt": "\nArraste e solte o arquivo de vídeo abaixo, digite o caminho ou [bold {theme}]0 para voltar[/]:",
         "local_media_converting": "Extraindo áudio (MP3)...",
-        
-        # Menu Configurações
         "menu_settings_title": "[bold white]Menu de Configurações[/]",
         "settings_status_ask": "Sempre perguntar onde salvar",
         "settings_status_auto": "Salvar automaticamente em: {dir}",
@@ -95,8 +89,6 @@ I18N = {
         "settings_opt_3": " Verificar e Atualizar Dependências",
         "settings_opt_4": " Sobre o shifTool / Créditos",
         "settings_opt_0": " Voltar ao Menu Principal",
-        
-        # Atualizador de Dependências
         "updater_check_title": "[bold white]Verificador de Dependências[/]",
         "updater_check_desc": "Fazendo varredura nas bibliotecas essenciais do sistema...",
         "updater_checking": "Verificando pacotes no PyPI...",
@@ -106,21 +98,15 @@ I18N = {
         "updater_updating": "Atualizando pacotes...",
         "updater_success": "\n[bold green]✓ Ferramentas atualizadas com sucesso![/bold green]",
         "updater_error": "\n[bold red]Erro ao atualizar as ferramentas:[/bold red] {error}",
-
-        # Sobre / Créditos
         "about_title": "[bold white]Sobre o shifTool[/]",
-        "about_version": "[bold white]Versão:[/bold white] v1.1",
-        "about_desc": "Ferramenta CLI multifuncional para conversão universal de arquivos.",
+        "about_version": "[bold white]Versão:[/bold white] v1.2",
+        "about_desc": "Ferramenta CLI multifuncional para conversão universal de arquivos e mídias.",
         "about_credits": "[bold white]Criado por:[/bold white] Igor\n[bold white]GitHub:[/bold white] [bold {theme}]https://github.com/igmunizw[/bold {theme}]",
-
-        # Idiomas
         "lang_menu_title": "[bold white]Selecione o Idioma / Select Language[/]",
         "lang_opt_1": " Português (pt)",
         "lang_opt_2": " English (en)",
         "lang_opt_0": " Voltar ao Menu Anterior / Back to Previous Menu",
         "lang_changed": "\n[bold green]✓ Idioma alterado com sucesso para Português![/bold green]",
-        
-        # Salvamento
         "settings_behavior_title": "[bold white]Configurar Comportamento de Salvamento[/]",
         "settings_current_mode": "[bold white]Modo Atual de Salvamento:[/bold white]\n[bold {theme}]{status}[/bold {theme}]",
         "settings_desc_prompt": "\nEscolha como o sistema deve tratar os arquivos convertidos:",
@@ -130,23 +116,19 @@ I18N = {
         "settings_saved_ask": "\n[bold green]✓ Configuração salva:[/] O aplicativo sempre perguntará onde salvar os arquivos.",
         "settings_saved_auto": "\n[bold green]✓ Configuração salva:[/] Arquivos serão salvos automaticamente em:\n[bold white]{dir}[/bold white]",
         "settings_no_folder": "\n[bold yellow]Nenhuma pasta foi selecionada. Mantendo configuração anterior.[/bold yellow]",
-        
-        # Conversor Universal
         "tool_title": "[bold white]Conversor Universal (shifTool)[/]",
         "tool_desc": "O shifTool converte imagens, documentos, textos puros e planilhas.\nFormatos suportados: [bold {theme}]PNG, JPG, WEBP, PDF, DOCX, TXT, MD, XLSX, CSV, JSON[/].",
         "prompt_file": "\nArraste e solte o arquivo abaixo, digite o caminho ou [bold {theme}]0 para voltar[/]:",
         "file_not_found": "\n[bold red]Erro:[/bold red] O arquivo '{filepath}' não foi encontrado.",
         "invalid_format": "\n[bold red]Erro:[/bold red] Formato de entrada não suportado.\nForneça uma imagem, documento de texto, planilha suportada ou PDF.",
         "file_detected": "\n[bold]Arquivo detectado:[/bold] {filename} [dim]({ext})[/dim]",
-        
         "select_target": "[bold white]Selecione o formato de saída desejado:[/]\n",
         "target_opt_0": " Voltar ao Menu Anterior",
         "target_prompt": "\nOpção de destino",
-        
-        # YouTube ...
-        "yt_title": "[bold white]Baixador do YouTube[/]",
-        "yt_desc": "Baixe vídeos em MP4 ou extraia áudios em MP3 do YouTube com alta qualidade utilizando o yt-dlp.",
-        "yt_prompt_url": "\nCole o link (URL) do vídeo do YouTube abaixo ou digite [bold {theme}]0 para voltar[/]:",
+        "yt_title": "[bold white]Conversor de Mídia por Link (Lote suportado)[/]",
+        "yt_desc": "Baixe vídeos em MP4 ou extraia áudios em MP3 de sites como YouTube, Instagram, TikTok, etc.\n[dim]Dica: Para baixar vários de uma vez, cole os links separados por espaço![/dim]",
+        "yt_prompt_url": "\nCole o(s) link(s) da mídia abaixo ou digite [bold {theme}]0 para voltar[/]:",
+        "yt_link_error": "Ops! Esse link parece estar quebrado, privado ou indisponível. Tente outro link.",
         "yt_format_title": "[bold white]Selecione o Formato de Download[/]",
         "yt_format_opt_1": " Baixar como Vídeo (MP4)",
         "yt_format_opt_2": " Baixar como Áudio (MP3)",
@@ -161,7 +143,7 @@ I18N = {
         "yt_aqual_2": " Alta Qualidade (192 kbps)",
         "yt_aqual_3": " Qualidade Padrão (128 kbps)",
         "yt_aqual_0": " Voltar ao Menu Anterior",
-        "yt_downloading": "\n[bold {theme}]Iniciando o download do YouTube...[/bold {theme}]",
+        "yt_downloading": "\n[bold {theme}]Iniciando o download da mídia...[/bold {theme}]",
         "yt_downloading_progress": "Baixando...",
         "yt_processing_media": "Processando mídia...",
         "yt_plain_downloading": "Baixando: {percent}",
@@ -170,10 +152,7 @@ I18N = {
         "yt_label_audio": "Áudio MP3",
         "yt_success_title": "[bold white]Download Concluído[/]",
         "yt_success_msg": "[bold green]Download realizado com sucesso![/bold green]\n\n[bold]Título:[/bold] {title}\n[bold]Salvo em:[/bold] {dst}",
-        "yt_error": "\n[bold red]Erro durante o processamento:[/bold red]\n{error}",
         "yt_missing_dep": "\n[bold red]Recurso Indisponível:[/bold red] Uma biblioteca necessária não está instalada.",
-        
-        # Dependências do LibreOffice
         "lo_title_win": "[bold white]Instruções de Instalação[/]",
         "lo_title_linux": "[bold white]Instalação no Linux[/]",
         "lo_title_mac": "[bold white]Instalação no macOS[/]",
@@ -182,8 +161,6 @@ I18N = {
         "lo_missing_mac": "[bold red]Dependência Ausente: LibreOffice[/bold red]\n\nO navegador foi aberto para você baixar o LibreOffice correspondente ao seu sistema.",
         "lo_linux_try": "\n[bold yellow]Tentando instalar automaticamente via gerenciador de pacotes...[/bold yellow]",
         "lo_linux_fail": "\n[bold red]Não foi possível instalar automaticamente.[/bold red]\n\nExecute o comando manual no terminal referente à sua distribuição.",
-        
-        # Progresso e Sucesso
         "dialog_saving": "\n[dim]Abrindo caixa de diálogo para salvamento...[/dim]",
         "progress_reading": "[bold {theme}]Lendo/Processando arquivo...",
         "progress_converting": "[bold {theme}]Convertendo {src} -> {tgt}...",
@@ -191,15 +168,12 @@ I18N = {
         "success_title": "[bold white]Sucesso[/]",
         "success_msg": "[bold green]Conversão concluída com sucesso![/bold green]\n\n[bold]Origem:[/bold] {src}\n[bold]Conversão:[/bold] {ext_src} [bold {theme}]➔[/] {tgt}\n[bold]Salvo em:[/bold] {dst}",
         "error_unexpected": "\n[bold red]Erro inesperado durante a operação:[/bold red]\n{error}",
-        
-        # Caixa de Diálogo Tkinter
         "tk_save_title": "Salvar como {label}...",
         "tk_file_type": "Arquivo {label}",
         "tk_all_files": "Todos os arquivos",
         "tk_dir_title": "Selecione a pasta padrão para salvamento"
     },
     "en": {
-        # Initial Dependencies
         "dep_warning_title": "[WARNING] Missing dependencies detected:",
         "dep_warning_desc": "For full functionality of shifTool, these packages are required.",
         "dep_prompt": "Do you want to download and install missing dependencies now? [Y/N]",
@@ -208,11 +182,11 @@ I18N = {
         "dep_success": "\n[bold green]✓ Dependencies successfully installed![/bold green]\n",
         "dep_error": "\n[bold red]Error installing dependencies automatically:[/] {error}",
         "dep_declined": "\n[bold yellow]Installation declined by user. Closing application. Goodbye![/bold yellow]\n",
+        "ffmpeg_warning_title": "[bold yellow]Friendly Warning: FFmpeg missing[/bold yellow]",
+        "ffmpeg_warning_desc": "[bold]FFmpeg[/bold] was not found on your computer.\nIt is essential for processing media, converting audio/video, and preventing crashes.\n\nPlease install it on your system.",
         "config_save_error": "\n[bold red]Error saving configuration file:[/] {error}",
         "lo_convert_error": "Could not perform document conversion.",
         "spreadsheet_error": "Error processing spreadsheet/data: {error}",
-
-        # General & Errors
         "invalid_choice": "[bold red]Invalid option![/bold red] Please choose one of the available options from the menu.",
         "press_enter": "\nPress [bold]Enter[/bold] to continue...",
         "press_enter_menu": "\nPress [bold]Enter[/bold] to return to the main menu...",
@@ -220,26 +194,19 @@ I18N = {
         "goodbye": "\n[bold {theme}]Closing shifTool. Goodbye![/]",
         "interrupted": "\n\n[bold {theme}]Program interrupted by user. Exiting...[/]",
         "op_canceled": "\n[bold {theme}]Operation canceled by user. Returning to menu...[/]",
-        
-        # Main Menu
         "menu_main_title": "[bold white]Main Menu[/]",
         "menu_opt_1": " Universal Document / File Transformer",
         "menu_opt_2": " Media Converter",
         "menu_opt_3": " Settings",
         "menu_opt_4": " Exit / Close Application",
-
-        # Media Converter
         "media_menu_title": "[bold white]Media Converter[/]",
-        "media_opt_1": " Convert media via YouTube link",
+        "media_opt_1": " Convert media via Link (Batch Supported)",
         "media_opt_2": " Convert local media",
         "media_opt_0": " Back to Main Menu",
-        
         "local_media_title": "[bold white]Convert Local Media[/]",
         "local_media_desc": "Select a video file from your computer to extract the audio to MP3 quickly and cleanly.",
         "local_media_prompt": "\nDrag and drop the video file below, type the path, or enter [bold {theme}]0 to go back[/]:",
         "local_media_converting": "Extracting audio (MP3)...",
-        
-        # Settings Menu
         "menu_settings_title": "[bold white]Settings Menu[/]",
         "settings_status_ask": "Always ask where to save",
         "settings_status_auto": "Save automatically to: {dir}",
@@ -249,8 +216,6 @@ I18N = {
         "settings_opt_3": " Check and Update Dependencies",
         "settings_opt_4": " About shifTool / Credits",
         "settings_opt_0": " Back to Main Menu",
-        
-        # Dependency Updater
         "updater_check_title": "[bold white]Dependency Checker[/]",
         "updater_check_desc": "Scanning shifTool essential libraries...",
         "updater_checking": "Checking packages on PyPI...",
@@ -260,21 +225,15 @@ I18N = {
         "updater_updating": "Updating packages...",
         "updater_success": "\n[bold green]✓ Tools successfully updated![/bold green]",
         "updater_error": "\n[bold red]Error updating tools:[/bold red] {error}",
-
-        # About / Credits
         "about_title": "[bold white]About shifTool[/]",
-        "about_version": "[bold white]Version:[/bold white] v1.1",
+        "about_version": "[bold white]Version:[/bold white] v1.2",
         "about_desc": "Multifunctional CLI tool for universal file conversion.",
         "about_credits": "[bold white]Created by:[/bold white] Igor\n[bold white]GitHub:[/bold white] [bold {theme}]https://github.com/igmunizw[/bold {theme}]",
-
-        # Languages
         "lang_menu_title": "[bold white]Select Language / Selecione o Idioma[/]",
         "lang_opt_1": " Português (pt)",
         "lang_opt_2": " English (en)",
         "lang_opt_0": " Back to Previous Menu / Voltar ao Menu Anterior",
         "lang_changed": "\n[bold green]✓ Language successfully changed to English![/bold green]",
-        
-        # Saving
         "settings_behavior_title": "[bold white]Configure Save Behavior[/]",
         "settings_current_mode": "[bold white]Current Save Mode:[/bold white]\n[bold {theme}]{status}[/bold {theme}]",
         "settings_desc_prompt": "\nChoose how the system should handle converted files:",
@@ -284,23 +243,19 @@ I18N = {
         "settings_saved_ask": "\n[bold green]✓ Setting saved:[/] The application will always ask where to save files.",
         "settings_saved_auto": "\n[bold green]✓ Setting saved:[/] Files will be saved automatically in:\n[bold white]{dir}[/bold white]",
         "settings_no_folder": "\n[bold yellow]No folder selected. Keeping previous settings.[/bold yellow]",
-        
-        # Universal Converter
         "tool_title": "[bold white]Universal Converter (shifTool)[/]",
         "tool_desc": "shifTool converts images, documents, pure texts, and spreadsheets.\nSupported formats: [bold {theme}]PNG, JPG, WEBP, PDF, DOCX, TXT, MD, XLSX, CSV, JSON[/].",
         "prompt_file": "\nDrag and drop the file below, type the path, or enter [bold {theme}]0 to go back[/]:",
         "file_not_found": "\n[bold red]Error:[/bold red] File '{filepath}' was not found.",
         "invalid_format": "\n[bold red]Error:[/bold red] Unsupported input format.\nPlease provide a supported image, document, spreadsheet, or PDF.",
         "file_detected": "\n[bold]File detected:[/bold] {filename} [dim]({ext})[/dim]",
-        
         "select_target": "[bold white]Select the output format for conversion:[/]\n",
         "target_opt_0": " Back to Previous Menu",
         "target_prompt": "\nTarget format option",
-        
-        # YouTube Downloader ...
-        "yt_title": "[bold white]YouTube Downloader[/]",
-        "yt_desc": "Download videos as MP4 or extract audio as MP3 from YouTube in high quality using yt-dlp.",
-        "yt_prompt_url": "\nPaste the YouTube video URL below or type [bold {theme}]0 to go back[/]:",
+        "yt_title": "[bold white]Media Link Converter (Batch Supported)[/]",
+        "yt_desc": "Download videos as MP4 or extract audio as MP3 from hundreds of sites.\n[dim]Tip: To download multiple files at once, paste links separated by spaces![/dim]",
+        "yt_prompt_url": "\nPaste the media link(s) below or type [bold {theme}]0 to go back[/]:",
+        "yt_link_error": "Oops! This link seems to be broken, private, or unavailable. Try another link.",
         "yt_format_title": "[bold white]Select Download Format[/]",
         "yt_format_opt_1": " Download as Video (MP4)",
         "yt_format_opt_2": " Download as Audio (MP3)",
@@ -315,7 +270,7 @@ I18N = {
         "yt_aqual_2": " High Quality (192 kbps)",
         "yt_aqual_3": " Standard Quality (128 kbps)",
         "yt_aqual_0": " Back to Previous Menu",
-        "yt_downloading": "\n[bold {theme}]Starting YouTube download...[/bold {theme}]",
+        "yt_downloading": "\n[bold {theme}]Starting media download...[/bold {theme}]",
         "yt_downloading_progress": "Downloading...",
         "yt_processing_media": "Processing media...",
         "yt_plain_downloading": "Downloading: {percent}",
@@ -324,10 +279,7 @@ I18N = {
         "yt_label_audio": "MP3 Audio",
         "yt_success_title": "[bold white]Download Completed[/]",
         "yt_success_msg": "[bold green]Download completed successfully![/bold green]\n\n[bold]Title:[/bold] {title}\n[bold]Saved to:[/bold] {dst}",
-        "yt_error": "\n[bold red]Error during process:[/bold red]\n{error}",
         "yt_missing_dep": "\n[bold red]Feature Unavailable:[/bold red] A required library is not installed.",
-        
-        # LibreOffice Dependencies
         "lo_title_win": "[bold white]Installation Instructions[/]",
         "lo_title_linux": "[bold white]Linux Installation[/]",
         "lo_title_mac": "[bold white]macOS Installation[/]",
@@ -336,8 +288,6 @@ I18N = {
         "lo_missing_mac": "[bold red]Missing Dependency: LibreOffice[/bold red]\n\nYour browser was opened to download LibreOffice.",
         "lo_linux_try": "\n[bold yellow]Attempting automatic installation via package manager...[/bold yellow]",
         "lo_linux_fail": "\n[bold red]Could not install automatically.[/bold red]\n\nRun the manual terminal command for your distribution.",
-        
-        # Progress and Success
         "dialog_saving": "\n[dim]Opening file save dialog...[/dim]",
         "progress_reading": "[bold {theme}]Reading/Processing file...",
         "progress_converting": "[bold {theme}]Converting {src} -> {tgt}...",
@@ -345,8 +295,6 @@ I18N = {
         "success_title": "[bold white]Success[/]",
         "success_msg": "[bold green]Conversion completed successfully![/bold green]\n\n[bold]Source:[/bold] {src}\n[bold]Conversion:[/bold] {ext_src} [bold {theme}]➔[/] {tgt}\n[bold]Saved to:[/bold] {dst}",
         "error_unexpected": "\n[bold red]Unexpected error during operation:[/bold red]\n{error}",
-        
-        # Tkinter File Dialogs
         "tk_save_title": "Save as {label}...",
         "tk_file_type": "{label} File",
         "tk_all_files": "All Files",
@@ -500,7 +448,6 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 def show_header():
-    """Exibe o cabeçalho oficial do aplicativo com a logo ASCII shifTool."""
     if HAS_PYFIGLET:
         ascii_art = pyfiglet.figlet_format("shifTool", font="slant")
         ascii_art = "\n".join(line for line in ascii_art.splitlines() if line.strip())
@@ -534,26 +481,20 @@ def ask_choice(prompt_text, choices, show_choices=True):
 
 def load_config():
     global CURRENT_LANG
-    
-    # 1. Define o caminho dinâmico para a pasta "Documentos" do usuário
     default_docs = os.path.join(os.path.expanduser("~"), "Documents")
-    # Se por acaso o Windows/Linux do usuário não tiver a pasta Documents, joga na pasta Home
     if not os.path.exists(default_docs):
         default_docs = os.path.expanduser("~") 
 
     config = {"save_mode": "ask", "default_dir": default_docs, "language": "pt"}
     
-    # 2. Verifica se o arquivo já existe
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 loaded = json.load(f)
                 config.update(loaded)
         except Exception:
-            # Se o arquivo existir mas estiver corrompido/vazio, ele se auto-conserta
             save_config(config)
     else:
-        # 3. SE NÃO EXISTIR: Cria o arquivo físico automaticamente na primeira execução!
         save_config(config)
             
     CURRENT_LANG = config.get("language", "pt")
@@ -604,11 +545,25 @@ def resolve_save_path(default_filename, target_ext, target_label):
     return open_save_dialog(default_filename, target_ext, target_label)
 
 # ==========================================
+# VERIFICAÇÃO DO FFMPEG
+# ==========================================
+def check_ffmpeg_installed():
+    if shutil.which("ffmpeg"):
+        return True
+    if HAS_IMAGEIO_FFMPEG:
+        try:
+            import imageio_ffmpeg
+            if os.path.exists(imageio_ffmpeg.get_ffmpeg_exe()):
+                return True
+        except Exception:
+            pass
+    return False
+
+# ==========================================
 # MENU DE CONFIGURAÇÕES E UTILIDADES
 # ==========================================
 
 def check_and_update_all_dependencies():
-    """Verifica todos os pacotes chave e oferece opção elegante de atualização."""
     clear_screen()
     show_header()
     
@@ -905,14 +860,12 @@ def handle_libreoffice_dependency():
 # FUNÇÕES DE CONVERSÃO (Novo & Antigo)
 # ==========================================
 
-# Textos e Markdown
 def convert_text_format(filepath, save_path):
     with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
         content = f.read()
     with open(save_path, "w", encoding="utf-8") as f:
         f.write(content)
 
-# Extração de PDF para Texto (Usando pypdf leve)
 def extract_text_from_pdf(filepath, save_path):
     if not HAS_PYPDF: raise RuntimeError("Dependência 'pypdf' necessária para extrair texto.")
     import pypdf
@@ -926,7 +879,6 @@ def extract_text_from_pdf(filepath, save_path):
     with open(save_path, "w", encoding="utf-8") as f:
         f.write(text)
 
-# Dados e Planilhas (Usando pandas robusto)
 def convert_spreadsheet(filepath, target_ext, save_path):
     if not HAS_PANDAS: raise RuntimeError("Dependência 'pandas' não está instalada.")
     import pandas as pd
@@ -953,7 +905,6 @@ def convert_spreadsheet(filepath, target_ext, save_path):
     except Exception as e:
         raise RuntimeError(get_text("spreadsheet_error", error=str(e)))
 
-# Imagens e Documentos Clássicos
 def convert_image_to_image(filepath, target_ext, save_path):
     if not HAS_PIL: raise RuntimeError("Pillow dependency is missing.")
     with Image.open(filepath) as img:
@@ -1029,7 +980,7 @@ def convert_doc_to_pdf(filepath, save_path):
     raise RuntimeError(get_text("lo_convert_error"))
 
 # ==========================================
-# FLUXO DO CONVERSOR UNIVERSAL (Expandido)
+# FLUXO DO CONVERSOR UNIVERSAL
 # ==========================================
 
 def tool_transformador_universal():
@@ -1056,7 +1007,6 @@ def tool_transformador_universal():
         
     source_ext = os.path.splitext(filepath)[1].lower()
     
-    # Categorias suportadas
     valid_image_exts = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".tiff", ".tif")
     valid_doc_exts = (".docx", ".doc", ".odt")
     valid_text_exts = (".txt", ".md")
@@ -1084,7 +1034,6 @@ def tool_transformador_universal():
     target_map = {}
     opt_idx = 1
     
-    # Construção Dinâmica das Opções baseada no arquivo
     if is_doc:
         console.print(f" [[bold {THEME_COLOR}]{opt_idx}[/]] PDF (.pdf)")
         valid_options.append(str(opt_idx))
@@ -1111,7 +1060,7 @@ def tool_transformador_universal():
             valid_options.append(str(opt_idx))
             target_map[str(opt_idx)] = (ext, label)
             opt_idx += 1
-    else: # is_image
+    else: 
         targets = [(".png", "PNG"), (".jpg", "JPG"), (".webp", "WEBP"), (".bmp", "BMP"), (".tiff", "TIFF"), (".pdf", "PDF")]
         for ext, label in targets:
             if ext != source_ext and not (source_ext in [".jpg", ".jpeg"] and ext == ".jpg"):
@@ -1145,7 +1094,6 @@ def tool_transformador_universal():
                 time.sleep(0.2)
                 progress.update(task, advance=40, description=get_text("progress_converting", src=source_ext.upper(), tgt=target_label))
                 
-                # Encaminhamento da conversão adequado
                 if is_doc: convert_doc_to_pdf(filepath, save_path)
                 elif is_pdf:
                     if target_ext == ".txt": extract_text_from_pdf(filepath, save_path)
@@ -1179,10 +1127,10 @@ def tool_transformador_universal():
     console.input()
 
 # ==========================================
-# SUBMENU & FLUXOS DE MÍDIA (YOUTUBE / LOCAL)
+# SUBMENU & FLUXOS DE MÍDIA (LINK / LOCAL)
 # ==========================================
 
-def tool_youtube_downloader():
+def tool_link_media_converter():
     if not HAS_YT_DLP:
         clear_screen()
         show_header()
@@ -1199,11 +1147,16 @@ def tool_youtube_downloader():
             console.print(Panel(get_text("yt_desc"), title=get_text("yt_title"), border_style=THEME_COLOR))
         else:
             console.print(get_text("yt_desc"))
+            
         console.print(get_text("yt_prompt_url"))
         
-        url = console.input(f"[bold {THEME_COLOR}]>[/] ").strip()
-        if url == "0" or not url: return
-            
+        raw_input_str = console.input(f"[bold {THEME_COLOR}]>[/] ").strip()
+        if raw_input_str == "0" or not raw_input_str: return
+        
+        # Cria lista de links (Modo Lote incluído)
+        urls_to_process = [u.strip() for u in raw_input_str.split() if u.strip()]
+        is_batch = len(urls_to_process) > 1
+
         clear_screen()
         show_header()
         
@@ -1248,111 +1201,171 @@ def tool_youtube_downloader():
         qual_choice = ask_choice(get_text("select_option"), choices=["0", "1", "2", "3"], show_choices=False)
         if qual_choice == "0": continue
             
-        try:
-            silent_opts = {'quiet': True, 'no_warnings': True, 'logger': QuietLogger()}
-            with yt_dlp.YoutubeDL(silent_opts) as ydl:
-                info = ydl.extract_info(url, download=False)
-                title = info.get('title', 'youtube_media')
-        except Exception as e:
-            console.print(get_text("yt_error", error=e))
-            console.print(get_text("press_enter"))
-            console.input()
-            continue
-            
-        safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '.', '_', '-')).strip()
         target_ext = ".mp4" if fmt_choice == "1" else ".mp3"
         target_label = get_text("yt_label_video") if fmt_choice == "1" else get_text("yt_label_audio")
-        
+
+        # ========================================================
+        # LÓGICA DE SALVAMENTO PARA LOTE OU ARQUIVO ÚNICO
+        # ========================================================
         config = load_config()
-        if config.get("save_mode") == "auto" and config.get("default_dir"):
-            default_dir = config.get("default_dir")
-            if os.path.exists(default_dir):
-                outtmpl_path = os.path.join(default_dir, '%(title)s')
-                final_file_path = os.path.join(default_dir, safe_title + target_ext)
-            else:
-                outtmpl_path = '%(title)s'
-                final_file_path = safe_title + target_ext
-        else:
-            console.print(get_text("dialog_saving"))
-            save_path = open_save_dialog(safe_title + target_ext, target_ext, target_label)
-            if not save_path:
+        batch_save_dir = None
+        
+        if config.get("save_mode") == "ask" and is_batch:
+            console.print("\n[dim]Selecione a pasta padrão para salvar todos os arquivos da lista...[/dim]")
+            batch_save_dir = open_folder_dialog()
+            if not batch_save_dir:
                 console.print(get_text("op_canceled"))
                 time.sleep(1.5)
                 continue
-            outtmpl_path = os.path.splitext(save_path)[0]
-            final_file_path = save_path
+
+        # Inicia o Processamento em Lote
+        for raw_url in urls_to_process:
+            url = raw_url
+            if is_batch:
+                console.print(f"\n[bold white]Processando link:[/] {url}")
             
-        ydl_opts = {
-            'outtmpl': outtmpl_path + '.%(ext)s',
-            'noplaylist': True,
-            'quiet': True,
-            'no_warnings': True,
-            'noprogress': True,
-            'logger': QuietLogger()
-        }
-        
-        if HAS_IMAGEIO_FFMPEG:
-            try: ydl_opts['ffmpeg_location'] = imageio_ffmpeg.get_ffmpeg_exe()
-            except Exception: pass
-        
-        if fmt_choice == "1":
-            ydl_opts['merge_output_format'] = 'mp4'
-            if qual_choice == "1": ydl_opts['format'] = 'bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b'
-            elif qual_choice == "2": ydl_opts['format'] = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4] / best[height<=1080]'
-            elif qual_choice == "3": ydl_opts['format'] = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4] / best[height<=720]'
-        else:
-            ydl_opts['format'] = 'bestaudio'
-            postprocessor = {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}
-            if qual_choice == "2": postprocessor['preferredquality'] = '192'
-            elif qual_choice == "3": postprocessor['preferredquality'] = '128'
-            else: postprocessor['preferredquality'] = '0'
-            ydl_opts['postprocessors'] = [postprocessor]
+            # Limpeza do Link
+            try:
+                parsed_url = urllib.parse.urlparse(url)
+                if "youtube.com" in parsed_url.netloc:
+                    query_params = urllib.parse.parse_qs(parsed_url.query)
+                    if 'v' in query_params:
+                        url = f"https://www.youtube.com/watch?v={query_params['v'][0]}"
+                elif "youtu.be" in parsed_url.netloc:
+                    video_id = parsed_url.path.lstrip('/')
+                    url = f"https://www.youtube.com/watch?v={video_id}"
+            except Exception:
+                pass 
+
+            info = None
+            title = "media_download"
+            cookie_used = None
             
-        console.print(get_text("yt_downloading"))
-        
-        try:
-            if HAS_RICH:
-                with Progress(
-                    SpinnerColumn(style=THEME_COLOR),
-                    TextColumn(f"[bold {THEME_COLOR}]{get_text('yt_downloading_progress')}[/bold {THEME_COLOR}]"),
-                    BarColumn(complete_style=THEME_COLOR, finished_style=THEME_COLOR),
-                    TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                    TransferSpeedColumn(), TimeRemainingColumn(), console=console
-                ) as progress:
-                    task_id = progress.add_task("download", total=None)
-                    def rich_progress_hook(d):
+            silent_opts = {
+                'quiet': True, 
+                'no_warnings': True, 
+                'logger': QuietLogger(),
+                'noplaylist': True
+            }
+            
+            # Tentativa de extração e tratamento amigável de erros
+            try:
+                with yt_dlp.YoutubeDL(silent_opts) as ydl:
+                    info = ydl.extract_info(url, download=False)
+                    title = info.get('title', 'media_download')
+            except Exception:
+                browsers_to_try = ['chrome', 'edge', 'firefox', 'brave', 'opera', 'vivaldi', 'safari']
+                for browser in browsers_to_try:
+                    try:
+                        fallback_opts = silent_opts.copy()
+                        fallback_opts['cookiesfrombrowser'] = (browser,)
+                        with yt_dlp.YoutubeDL(fallback_opts) as ydl:
+                            info = ydl.extract_info(url, download=False)
+                            title = info.get('title', 'media_download')
+                            cookie_used = (browser,) 
+                            break 
+                    except Exception:
+                        continue 
+                        
+            if info is None:
+                console.print(f"\n[bold red]{get_text('yt_link_error')}[/bold red]")
+                time.sleep(2)
+                continue # Continua para o próximo link da lista
+                
+            safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '.', '_', '-')).strip()
+            
+            if config.get("save_mode") == "auto" and config.get("default_dir") and os.path.exists(config.get("default_dir")):
+                default_dir = config.get("default_dir")
+                outtmpl_path = os.path.join(default_dir, '%(title)s')
+                final_file_path = os.path.join(default_dir, safe_title + target_ext)
+            elif is_batch and batch_save_dir:
+                outtmpl_path = os.path.join(batch_save_dir, '%(title)s')
+                final_file_path = os.path.join(batch_save_dir, safe_title + target_ext)
+            else:
+                console.print(get_text("dialog_saving"))
+                save_path = open_save_dialog(safe_title + target_ext, target_ext, target_label)
+                if not save_path:
+                    console.print(get_text("op_canceled"))
+                    time.sleep(1.5)
+                    continue
+                outtmpl_path = os.path.splitext(save_path)[0]
+                final_file_path = save_path
+                
+            ydl_opts = {
+                'outtmpl': outtmpl_path + '.%(ext)s',
+                'noplaylist': True,
+                'quiet': True,
+                'no_warnings': True,
+                'noprogress': True,
+                'logger': QuietLogger()
+            }
+            
+            if cookie_used:
+                ydl_opts['cookiesfrombrowser'] = cookie_used
+            
+            if HAS_IMAGEIO_FFMPEG:
+                try: ydl_opts['ffmpeg_location'] = imageio_ffmpeg.get_ffmpeg_exe()
+                except Exception: pass
+            
+            if fmt_choice == "1":
+                ydl_opts['merge_output_format'] = 'mp4'
+                if qual_choice == "1": ydl_opts['format'] = 'bv*[ext=mp4]+ba[ext=m4a]/b[ext=mp4] / bv*+ba/b'
+                elif qual_choice == "2": ydl_opts['format'] = 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4] / best[height<=1080]'
+                elif qual_choice == "3": ydl_opts['format'] = 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4] / best[height<=720]'
+            else:
+                ydl_opts['format'] = 'bestaudio'
+                postprocessor = {'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}
+                if qual_choice == "2": postprocessor['preferredquality'] = '192'
+                elif qual_choice == "3": postprocessor['preferredquality'] = '128'
+                else: postprocessor['preferredquality'] = '0'
+                ydl_opts['postprocessors'] = [postprocessor]
+                
+            console.print(get_text("yt_downloading"))
+            
+            def execute_download(current_opts, target_url):
+                if HAS_RICH:
+                    with Progress(
+                        SpinnerColumn(style=THEME_COLOR),
+                        TextColumn(f"[bold {THEME_COLOR}]{get_text('yt_downloading_progress')}[/bold {THEME_COLOR}]"),
+                        BarColumn(complete_style=THEME_COLOR, finished_style=THEME_COLOR),
+                        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                        TransferSpeedColumn(), TimeRemainingColumn(), console=console
+                    ) as progress:
+                        task_id = progress.add_task("download", total=None)
+                        def rich_progress_hook(d):
+                            if d.get('status') == 'downloading':
+                                total = d.get('total_bytes') or d.get('total_bytes_estimate')
+                                downloaded = d.get('downloaded_bytes', 0)
+                                if total: progress.update(task_id, total=total, completed=downloaded)
+                            elif d.get('status') == 'finished':
+                                progress.update(task_id, description=f"[bold green]{get_text('yt_processing_media')}[/bold green]")
+                        current_opts['progress_hooks'] = [rich_progress_hook]
+                        with yt_dlp.YoutubeDL(current_opts) as ydl: ydl.download([target_url])
+                else:
+                    def plain_progress_hook(d):
                         if d.get('status') == 'downloading':
-                            total = d.get('total_bytes') or d.get('total_bytes_estimate')
-                            downloaded = d.get('downloaded_bytes', 0)
-                            if total: progress.update(task_id, total=total, completed=downloaded)
+                            percent = d.get('_percent_str', '').strip()
+                            print(f"\r{get_text('yt_plain_downloading', percent=percent)}", end="", flush=True)
                         elif d.get('status') == 'finished':
-                            progress.update(task_id, description=f"[bold green]{get_text('yt_processing_media')}[/bold green]")
-                    ydl_opts['progress_hooks'] = [rich_progress_hook]
+                            print(get_text("yt_plain_done"))
+                    current_opts['progress_hooks'] = [plain_progress_hook]
+                    with yt_dlp.YoutubeDL(current_opts) as ydl: ydl.download([target_url])
 
-                    with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([url])
-            else:
-                def plain_progress_hook(d):
-                    if d.get('status') == 'downloading':
-                        percent = d.get('_percent_str', '').strip()
-                        print(f"\r{get_text('yt_plain_downloading', percent=percent)}", end="", flush=True)
-                    elif d.get('status') == 'finished':
-                        print(get_text("yt_plain_done"))
-
-                ydl_opts['progress_hooks'] = [plain_progress_hook]
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl: ydl.download([url])
-
-            console.print()
-            if HAS_RICH:
-                console.print(Panel(get_text("yt_success_msg", title=title, dst=final_file_path), title=get_text("yt_success_title"), border_style="green"))
-            else:
-                console.print(get_text("yt_success_msg", title=title, dst=final_file_path))
-        except Exception as e:
-            console.print(get_text("yt_error", error=e))
-            
+            try:
+                execute_download(ydl_opts, url)
+                console.print()
+                if HAS_RICH:
+                    console.print(Panel(get_text("yt_success_msg", title=title, dst=final_file_path), title=get_text("yt_success_title"), border_style="green"))
+                else:
+                    console.print(get_text("yt_success_msg", title=title, dst=final_file_path))
+            except Exception as e:
+                console.print(f"\n[bold red]{get_text('yt_link_error')}[/bold red]")
+                time.sleep(2)
+                continue
+                
         console.print(get_text("press_enter"))
         console.input()
         break
-
 
 def tool_local_media_converter():
     if not HAS_IMAGEIO_FFMPEG:
@@ -1448,7 +1461,7 @@ def tool_media_menu():
         choice = ask_choice(get_text("select_option"), choices=["0", "1", "2"], show_choices=False)
         
         if choice == "1":
-            tool_youtube_downloader()
+            tool_link_media_converter()
         elif choice == "2":
             tool_local_media_converter()
         elif choice == "0":
@@ -1461,6 +1474,19 @@ def tool_media_menu():
 
 def main():
     load_config()
+    
+    # 1. Verificação do FFmpeg
+    if not check_ffmpeg_installed():
+        clear_screen()
+        show_header()
+        if HAS_RICH:
+            console.print(Panel(get_text("ffmpeg_warning_desc"), title=get_text("ffmpeg_warning_title"), border_style="yellow"))
+        else:
+            console.print(get_text("ffmpeg_warning_title"))
+            console.print(get_text("ffmpeg_warning_desc"))
+        console.print(get_text("press_enter"))
+        console.input()
+        
     while True:
         clear_screen()
         show_header()
