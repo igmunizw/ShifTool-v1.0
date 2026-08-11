@@ -7,18 +7,14 @@ import json
 import shutil
 import platform
 import webbrowser
-import tkinter as tk
-from tkinter import filedialog
-import urllib.parse  # Biblioteca para higienização dos links
+import urllib.parse
 
 # ==========================================
 # CONFIGURAÇÕES GERAIS E INTERNACIONALIZAÇÃO (i18n)
 # ==========================================
 THEME_COLOR = "#FF6B6B"
-# Salva na pasta do usuário para evitar o "Permission denied"
 CONFIG_FILE = os.path.join(os.path.expanduser("~"), ".shifTool_config.json")
 
-# Gerenciador de Dependências do Projeto
 REQUIRED_PACKAGES = {
     "yt_dlp": {"pkg": "yt-dlp", "size": "~15 MB"},
     "fitz": {"pkg": "pymupdf", "size": "~35 MB"},
@@ -26,19 +22,21 @@ REQUIRED_PACKAGES = {
     "rich": {"pkg": "rich", "size": "~10 MB"},
     "pyfiglet": {"pkg": "pyfiglet", "size": "~1 MB"},
     "PIL": {"pkg": "pillow", "size": "~10 MB"},
-    "moviepy": {"pkg": "moviepy", "size": "~20 MB"},
-    "imageio_ffmpeg": {"pkg": "imageio-ffmpeg", "size": "~40 MB"},
     "pandas": {"pkg": "pandas", "size": "~35 MB"},
     "openpyxl": {"pkg": "openpyxl", "size": "~3 MB"},
     "pypdf": {"pkg": "pypdf", "size": "~3 MB"}
+}
+
+MEDIA_PACKAGES = {
+    "moviepy": {"pkg": "moviepy", "size": "~20 MB"},
+    "imageio_ffmpeg": {"pkg": "imageio-ffmpeg", "size": "~40 MB"}
 }
 
 def load_initial_lang():
     if os.path.exists(CONFIG_FILE):
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                loaded = json.load(f)
-                return loaded.get("language", "pt")
+                return json.load(f).get("language", "pt")
         except Exception:
             pass
     return "pt"
@@ -55,6 +53,9 @@ I18N = {
         "dep_success": "\n[bold green]✓ Dependências instaladas com sucesso![/bold green]\n",
         "dep_error": "\n[bold red]Erro ao instalar dependências automaticamente:[/] {error}",
         "dep_declined": "\n[bold yellow]Instalação recusada pelo usuário. Encerrando o aplicativo. Até logo![/bold yellow]\n",
+        "media_dep_title": "[AVISO] Dependências de Mídia Ausentes",
+        "media_dep_desc": "Para processar áudio e vídeo localmente, os seguintes pacotes opcionais são necessários:",
+        "media_dep_prompt": "Deseja baixar e instalar o pacote de mídias agora? [S/N]",
         "ffmpeg_warning_title": "[bold yellow]Aviso Amigável: FFmpeg não encontrado[/bold yellow]",
         "ffmpeg_warning_desc": "O [bold]FFmpeg[/bold] não está instalado ou não foi encontrado no seu computador.\nEle é essencial para processar mídias, converter áudio/vídeo e evitar que o aplicativo quebre durante as conversões.\n\nPor favor, certifique-se de instalá-lo ou mantê-lo disponível no sistema para uma melhor experiência.",
         "config_save_error": "\n[bold red]Erro ao salvar arquivo de configuração:[/] {error}",
@@ -182,6 +183,9 @@ I18N = {
         "dep_success": "\n[bold green]✓ Dependencies successfully installed![/bold green]\n",
         "dep_error": "\n[bold red]Error installing dependencies automatically:[/] {error}",
         "dep_declined": "\n[bold yellow]Installation declined by user. Closing application. Goodbye![/bold yellow]\n",
+        "media_dep_title": "[WARNING] Missing Media Dependencies",
+        "media_dep_desc": "To process audio and video locally, the following optional packages are required:",
+        "media_dep_prompt": "Do you want to download and install the media packages now? [Y/N]",
         "ffmpeg_warning_title": "[bold yellow]Friendly Warning: FFmpeg missing[/bold yellow]",
         "ffmpeg_warning_desc": "[bold]FFmpeg[/bold] was not found on your computer.\nIt is essential for processing media, converting audio/video, and preventing crashes.\n\nPlease install it on your system.",
         "config_save_error": "\n[bold red]Error saving configuration file:[/] {error}",
@@ -326,7 +330,7 @@ def check_and_install_dependencies():
             missing_display.append(f" • {info['pkg']} ({info['size']})")
     
     if missing_mods:
-        os.system('cls' if os.name == 'nt' else 'clear')
+        subprocess.run(["cmd.exe", "/c", "cls"] if os.name == "nt" else ["clear"])
         print("\n" + "="*70)
         print(f" {get_text('dep_warning_title')}")
         for item in missing_display:
@@ -341,8 +345,7 @@ def check_and_install_dependencies():
                 try:
                     subprocess.check_call(
                         [sys.executable, "-m", "pip", "install", "rich"],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
                 except Exception:
                     pass
@@ -367,8 +370,7 @@ def check_and_install_dependencies():
                             progress.update(task, description=get_text("dep_installing_pkg", pkg=pkg))
                             subprocess.check_call(
                                 [sys.executable, "-m", "pip", "install", pkg],
-                                stdout=subprocess.DEVNULL,
-                                stderr=subprocess.DEVNULL
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                             )
                             progress.advance(task, 1)
                     print(get_text("dep_success"))
@@ -380,8 +382,7 @@ def check_and_install_dependencies():
                 try:
                     subprocess.check_call(
                         [sys.executable, "-m", "pip", "install", *missing_mods],
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.DEVNULL
+                        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
                     print(get_text("dep_success"))
                     time.sleep(1.5)
@@ -394,6 +395,69 @@ def check_and_install_dependencies():
 
 check_and_install_dependencies()
 
+def ensure_media_dependencies():
+    missing_mods = []
+    missing_display = []
+    
+    for mod_name, info in MEDIA_PACKAGES.items():
+        if importlib.util.find_spec(mod_name) is None:
+            missing_mods.append(info["pkg"])
+            missing_display.append(f" • {info['pkg']} ({info['size']})")
+    
+    if missing_mods:
+        refresh_screen()
+        if HAS_RICH:
+            console.print(Panel(get_text("media_dep_desc"), title=get_text("media_dep_title"), border_style="yellow"))
+        else:
+            console.print(get_text("media_dep_title"))
+            console.print(get_text("media_dep_desc"))
+            
+        for item in missing_display:
+            console.print(item)
+            
+        console.print()
+        prompt_str = f" {get_text('media_dep_prompt')}: "
+        choice = console.input(prompt_str).strip().lower()
+        
+        if choice in ['s', 'sim', 'y', 'yes']:
+            try:
+                if HAS_RICH:
+                    with Progress(
+                        SpinnerColumn(style=THEME_COLOR),
+                        TextColumn("[progress.description]{task.description}"),
+                        BarColumn(complete_style=THEME_COLOR, finished_style=THEME_COLOR),
+                        TimeElapsedColumn(),
+                        console=console
+                    ) as progress:
+                        task = progress.add_task(get_text("dep_installing_start"), total=len(missing_mods))
+                        for pkg in missing_mods:
+                            progress.update(task, description=get_text("dep_installing_pkg", pkg=pkg))
+                            subprocess.check_call(
+                                [sys.executable, "-m", "pip", "install", pkg],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                            )
+                            progress.advance(task, 1)
+                else:
+                    for pkg in missing_mods:
+                        console.print(get_text("dep_installing_pkg", pkg=pkg))
+                        subprocess.check_call(
+                            [sys.executable, "-m", "pip", "install", pkg],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                        )
+                
+                console.print(get_text("dep_success"))
+                time.sleep(1.5)
+                return True
+            except Exception as e:
+                console.print(get_text("dep_error", error=e))
+                time.sleep(2.5)
+                return False
+        else:
+            console.print(get_text("op_canceled"))
+            time.sleep(1.5)
+            return False
+    return True
+
 # ==========================================
 # IMPORTAÇÕES SEGURAS E FLAGS DE DISPONIBILIDADE
 # ==========================================
@@ -403,8 +467,6 @@ HAS_PIL = importlib.util.find_spec("PIL") is not None
 HAS_YT_DLP = importlib.util.find_spec("yt_dlp") is not None
 HAS_PYMUPDF = importlib.util.find_spec("fitz") is not None
 HAS_DOCX2PDF = importlib.util.find_spec("docx2pdf") is not None
-HAS_MOVIEPY = importlib.util.find_spec("moviepy") is not None
-HAS_IMAGEIO_FFMPEG = importlib.util.find_spec("imageio_ffmpeg") is not None
 HAS_PANDAS = importlib.util.find_spec("pandas") is not None
 HAS_PYPDF = importlib.util.find_spec("pypdf") is not None
 
@@ -420,23 +482,9 @@ if HAS_RICH:
     console = Console()
 else:
     class DummyConsole:
-        def print(self, *args, **kwargs):
-            print(*args)
-        def input(self, prompt=""):
-            return input(prompt)
+        def print(self, *args, **kwargs): print(*args)
+        def input(self, prompt=""): return input(prompt)
     console = DummyConsole()
-
-if HAS_PYFIGLET:
-    import pyfiglet
-
-if HAS_PIL:
-    from PIL import Image
-
-if HAS_YT_DLP:
-    import yt_dlp
-
-if HAS_IMAGEIO_FFMPEG:
-    import imageio_ffmpeg
 
 class QuietLogger:
     def debug(self, msg): pass
@@ -445,10 +493,11 @@ class QuietLogger:
     def error(self, msg): pass
 
 def clear_screen():
-    os.system('cls' if os.name == 'nt' else 'clear')
+    subprocess.run(["cmd.exe", "/c", "cls"] if os.name == "nt" else ["clear"])
 
 def show_header():
     if HAS_PYFIGLET:
+        import pyfiglet # Lazy import
         ascii_art = pyfiglet.figlet_format("shifTool", font="slant")
         ascii_art = "\n".join(line for line in ascii_art.splitlines() if line.strip())
         styled_title = Text(ascii_art, style=f"bold {THEME_COLOR}")
@@ -456,6 +505,10 @@ def show_header():
     else:
         console.print("=== shifTool ===")
     console.print()
+
+def refresh_screen():
+    clear_screen()
+    show_header()
 
 def ask_choice(prompt_text, choices, show_choices=True):
     choices_display = "/".join(choices) if show_choices else ""
@@ -512,6 +565,9 @@ def save_config(config_data):
         console.print(get_text("config_save_error", error=e))
 
 def open_save_dialog(default_filename, target_ext, target_label):
+    import tkinter as tk
+    from tkinter import filedialog
+    
     root = tk.Tk()
     root.withdraw()
     root.attributes('-topmost', True)
@@ -527,6 +583,9 @@ def open_save_dialog(default_filename, target_ext, target_label):
     return save_path
 
 def open_folder_dialog():
+    import tkinter as tk
+    from tkinter import filedialog
+    
     root = tk.Tk()
     root.withdraw()
     root.attributes('-topmost', True)
@@ -550,7 +609,7 @@ def resolve_save_path(default_filename, target_ext, target_label):
 def check_ffmpeg_installed():
     if shutil.which("ffmpeg"):
         return True
-    if HAS_IMAGEIO_FFMPEG:
+    if importlib.util.find_spec("imageio_ffmpeg") is not None:
         try:
             import imageio_ffmpeg
             if os.path.exists(imageio_ffmpeg.get_ffmpeg_exe()):
@@ -564,8 +623,7 @@ def check_ffmpeg_installed():
 # ==========================================
 
 def check_and_update_all_dependencies():
-    clear_screen()
-    show_header()
+    refresh_screen()
     
     if HAS_RICH:
         console.print(Panel(get_text("updater_check_desc"), title=get_text("updater_check_title"), border_style=THEME_COLOR))
@@ -668,11 +726,11 @@ def check_and_update_all_dependencies():
     console.input()
 
 def show_about_credits():
-    clear_screen()
-    show_header()
+    refresh_screen()
     
     ascii_text = "shifTool"
     if HAS_PYFIGLET:
+        import pyfiglet
         ascii_text = pyfiglet.figlet_format("shifTool", font="slant")
         ascii_text = "\n".join(line for line in ascii_text.splitlines() if line.strip())
         
@@ -693,8 +751,7 @@ def show_about_credits():
     console.input()
 
 def change_language_menu():
-    clear_screen()
-    show_header()
+    refresh_screen()
     
     menu_text = (
         f" [[bold {THEME_COLOR}]1[/]]" + get_text("lang_opt_1") + "\n" +
@@ -722,8 +779,7 @@ def change_language_menu():
     console.input()
 
 def configure_save_behavior():
-    clear_screen()
-    show_header()
+    refresh_screen()
     
     config = load_config()
     current_mode = config.get("save_mode", "ask")
@@ -765,8 +821,7 @@ def configure_save_behavior():
 
 def settings_menu():
     while True:
-        clear_screen()
-        show_header()
+        refresh_screen()
         
         config = load_config()
         mode_desc = get_text("settings_status_ask") if config.get("save_mode") == "ask" else get_text("settings_status_auto", dir=config.get("default_dir"))
@@ -831,13 +886,14 @@ def handle_libreoffice_dependency():
         installed = False
         try:
             if shutil.which("apt"):
-                res = subprocess.run("sudo apt update && sudo apt install -y libreoffice", shell=True)
+                subprocess.run(["sudo", "apt", "update"])
+                res = subprocess.run(["sudo", "apt", "install", "-y", "libreoffice"])
                 installed = (res.returncode == 0)
             elif shutil.which("dnf"):
-                res = subprocess.run("sudo dnf install -y libreoffice", shell=True)
+                res = subprocess.run(["sudo", "dnf", "install", "-y", "libreoffice"])
                 installed = (res.returncode == 0)
             elif shutil.which("pacman"):
-                res = subprocess.run("sudo pacman -S --noconfirm libreoffice-fresh", shell=True)
+                res = subprocess.run(["sudo", "pacman", "-S", "--noconfirm", "libreoffice-fresh"])
                 installed = (res.returncode == 0)
         except Exception:
             installed = False
@@ -857,7 +913,7 @@ def handle_libreoffice_dependency():
     return False
 
 # ==========================================
-# FUNÇÕES DE CONVERSÃO (Novo & Antigo)
+# FUNÇÕES DE CONVERSÃO
 # ==========================================
 
 def convert_text_format(filepath, save_path):
@@ -868,7 +924,7 @@ def convert_text_format(filepath, save_path):
 
 def extract_text_from_pdf(filepath, save_path):
     if not HAS_PYPDF: raise RuntimeError("Dependência 'pypdf' necessária para extrair texto.")
-    import pypdf
+    import pypdf # Lazy import
     text = ""
     with open(filepath, "rb") as f:
         reader = pypdf.PdfReader(f)
@@ -881,7 +937,7 @@ def extract_text_from_pdf(filepath, save_path):
 
 def convert_spreadsheet(filepath, target_ext, save_path):
     if not HAS_PANDAS: raise RuntimeError("Dependência 'pandas' não está instalada.")
-    import pandas as pd
+    import pandas as pd # Lazy import
     source_ext = os.path.splitext(filepath)[1].lower()
 
     try:
@@ -907,6 +963,7 @@ def convert_spreadsheet(filepath, target_ext, save_path):
 
 def convert_image_to_image(filepath, target_ext, save_path):
     if not HAS_PIL: raise RuntimeError("Pillow dependency is missing.")
+    from PIL import Image # Lazy import
     with Image.open(filepath) as img:
         if target_ext in [".jpg", ".jpeg", ".bmp"]:
             if img.mode in ("RGBA", "LA", "P"):
@@ -926,12 +983,14 @@ def convert_image_to_image(filepath, target_ext, save_path):
 
 def convert_image_to_pdf(filepath, save_path):
     if not HAS_PIL: raise RuntimeError("Pillow dependency is missing.")
+    from PIL import Image # Lazy import
     with Image.open(filepath) as img:
         pdf_image = img.convert("RGB")
         pdf_image.save(save_path, "PDF", resolution=100.0)
 
 def convert_pdf_to_image(filepath, target_ext, save_path):
     if not HAS_PYMUPDF: raise RuntimeError("PyMuPDF dependency is required.")
+    from PIL import Image # Lazy import
     try:
         import fitz
         doc = fitz.open(filepath)
@@ -984,8 +1043,7 @@ def convert_doc_to_pdf(filepath, save_path):
 # ==========================================
 
 def tool_transformador_universal():
-    clear_screen()
-    show_header()
+    refresh_screen()
     
     if HAS_RICH:
         console.print(Panel(get_text("tool_desc"), title=get_text("tool_title"), border_style=THEME_COLOR))
@@ -1130,18 +1188,48 @@ def tool_transformador_universal():
 # SUBMENU & FLUXOS DE MÍDIA (LINK / LOCAL)
 # ==========================================
 
+def execute_download(current_opts, target_url):
+    import yt_dlp # Lazy import
+    if HAS_RICH:
+        with Progress(
+            SpinnerColumn(style=THEME_COLOR),
+            TextColumn(f"[bold {THEME_COLOR}]{get_text('yt_downloading_progress')}[/bold {THEME_COLOR}]"),
+            BarColumn(complete_style=THEME_COLOR, finished_style=THEME_COLOR),
+            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+            TransferSpeedColumn(), TimeRemainingColumn(), console=console
+        ) as progress:
+            task_id = progress.add_task("download", total=None)
+            def rich_progress_hook(d):
+                if d.get('status') == 'downloading':
+                    total = d.get('total_bytes') or d.get('total_bytes_estimate')
+                    downloaded = d.get('downloaded_bytes', 0)
+                    if total: progress.update(task_id, total=total, completed=downloaded)
+                elif d.get('status') == 'finished':
+                    progress.update(task_id, description=f"[bold green]{get_text('yt_processing_media')}[/bold green]")
+            current_opts['progress_hooks'] = [rich_progress_hook]
+            with yt_dlp.YoutubeDL(current_opts) as ydl: ydl.download([target_url])
+    else:
+        def plain_progress_hook(d):
+            if d.get('status') == 'downloading':
+                percent = d.get('_percent_str', '').strip()
+                print(f"\r{get_text('yt_plain_downloading', percent=percent)}", end="", flush=True)
+            elif d.get('status') == 'finished':
+                print(get_text("yt_plain_done"))
+        current_opts['progress_hooks'] = [plain_progress_hook]
+        with yt_dlp.YoutubeDL(current_opts) as ydl: ydl.download([target_url])
+
 def tool_link_media_converter():
     if not HAS_YT_DLP:
-        clear_screen()
-        show_header()
+        refresh_screen()
         console.print(get_text("yt_missing_dep"))
         console.print(get_text("press_enter"))
         console.input()
         return
 
+    import yt_dlp # Lazy import garantido
+
     while True:
-        clear_screen()
-        show_header()
+        refresh_screen()
         
         if HAS_RICH:
             console.print(Panel(get_text("yt_desc"), title=get_text("yt_title"), border_style=THEME_COLOR))
@@ -1153,12 +1241,11 @@ def tool_link_media_converter():
         raw_input_str = console.input(f"[bold {THEME_COLOR}]>[/] ").strip()
         if raw_input_str == "0" or not raw_input_str: return
         
-        # Cria lista de links (Modo Lote incluído)
+        # Cria lista de links (Modo Lote incluído e corrigido)
         urls_to_process = [u.strip() for u in raw_input_str.split() if u.strip()]
         is_batch = len(urls_to_process) > 1
 
-        clear_screen()
-        show_header()
+        refresh_screen()
         
         fmt_text = (
             f" [[bold {THEME_COLOR}]1[/]]" + get_text("yt_format_opt_1") + "\n" +
@@ -1175,8 +1262,7 @@ def tool_link_media_converter():
         fmt_choice = ask_choice(get_text("select_option"), choices=["0", "1", "2"], show_choices=False)
         if fmt_choice == "0": continue
             
-        clear_screen()
-        show_header()
+        refresh_screen()
         
         if fmt_choice == "1":
             qual_text = (
@@ -1204,9 +1290,7 @@ def tool_link_media_converter():
         target_ext = ".mp4" if fmt_choice == "1" else ".mp3"
         target_label = get_text("yt_label_video") if fmt_choice == "1" else get_text("yt_label_audio")
 
-        # ========================================================
-        # LÓGICA DE SALVAMENTO PARA LOTE OU ARQUIVO ÚNICO
-        # ========================================================
+        # Configuração de Pasta p/ Lote
         config = load_config()
         batch_save_dir = None
         
@@ -1248,13 +1332,14 @@ def tool_link_media_converter():
                 'noplaylist': True
             }
             
-            # Tentativa de extração e tratamento amigável de erros
+            # Extração de info e tratamento de erro mais enxuto
             try:
                 with yt_dlp.YoutubeDL(silent_opts) as ydl:
                     info = ydl.extract_info(url, download=False)
                     title = info.get('title', 'media_download')
             except Exception:
-                browsers_to_try = ['chrome', 'edge', 'firefox', 'brave', 'opera', 'vivaldi', 'safari']
+                # Limitado apenas aos principais para evitar travamentos longos
+                browsers_to_try = ['chrome', 'edge', 'firefox'] 
                 for browser in browsers_to_try:
                     try:
                         fallback_opts = silent_opts.copy()
@@ -1270,7 +1355,7 @@ def tool_link_media_converter():
             if info is None:
                 console.print(f"\n[bold red]{get_text('yt_link_error')}[/bold red]")
                 time.sleep(2)
-                continue # Continua para o próximo link da lista
+                continue # Pula para o próximo link sem quebrar o laço
                 
             safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '.', '_', '-')).strip()
             
@@ -1303,8 +1388,10 @@ def tool_link_media_converter():
             if cookie_used:
                 ydl_opts['cookiesfrombrowser'] = cookie_used
             
-            if HAS_IMAGEIO_FFMPEG:
-                try: ydl_opts['ffmpeg_location'] = imageio_ffmpeg.get_ffmpeg_exe()
+            if importlib.util.find_spec("imageio_ffmpeg") is not None:
+                try: 
+                    import imageio_ffmpeg
+                    ydl_opts['ffmpeg_location'] = imageio_ffmpeg.get_ffmpeg_exe()
                 except Exception: pass
             
             if fmt_choice == "1":
@@ -1322,35 +1409,6 @@ def tool_link_media_converter():
                 
             console.print(get_text("yt_downloading"))
             
-            def execute_download(current_opts, target_url):
-                if HAS_RICH:
-                    with Progress(
-                        SpinnerColumn(style=THEME_COLOR),
-                        TextColumn(f"[bold {THEME_COLOR}]{get_text('yt_downloading_progress')}[/bold {THEME_COLOR}]"),
-                        BarColumn(complete_style=THEME_COLOR, finished_style=THEME_COLOR),
-                        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                        TransferSpeedColumn(), TimeRemainingColumn(), console=console
-                    ) as progress:
-                        task_id = progress.add_task("download", total=None)
-                        def rich_progress_hook(d):
-                            if d.get('status') == 'downloading':
-                                total = d.get('total_bytes') or d.get('total_bytes_estimate')
-                                downloaded = d.get('downloaded_bytes', 0)
-                                if total: progress.update(task_id, total=total, completed=downloaded)
-                            elif d.get('status') == 'finished':
-                                progress.update(task_id, description=f"[bold green]{get_text('yt_processing_media')}[/bold green]")
-                        current_opts['progress_hooks'] = [rich_progress_hook]
-                        with yt_dlp.YoutubeDL(current_opts) as ydl: ydl.download([target_url])
-                else:
-                    def plain_progress_hook(d):
-                        if d.get('status') == 'downloading':
-                            percent = d.get('_percent_str', '').strip()
-                            print(f"\r{get_text('yt_plain_downloading', percent=percent)}", end="", flush=True)
-                        elif d.get('status') == 'finished':
-                            print(get_text("yt_plain_done"))
-                    current_opts['progress_hooks'] = [plain_progress_hook]
-                    with yt_dlp.YoutubeDL(current_opts) as ydl: ydl.download([target_url])
-
             try:
                 execute_download(ydl_opts, url)
                 console.print()
@@ -1358,7 +1416,7 @@ def tool_link_media_converter():
                     console.print(Panel(get_text("yt_success_msg", title=title, dst=final_file_path), title=get_text("yt_success_title"), border_style="green"))
                 else:
                     console.print(get_text("yt_success_msg", title=title, dst=final_file_path))
-            except Exception as e:
+            except Exception:
                 console.print(f"\n[bold red]{get_text('yt_link_error')}[/bold red]")
                 time.sleep(2)
                 continue
@@ -1368,16 +1426,14 @@ def tool_link_media_converter():
         break
 
 def tool_local_media_converter():
-    if not HAS_IMAGEIO_FFMPEG:
-        clear_screen()
-        show_header()
+    if importlib.util.find_spec("imageio_ffmpeg") is None:
+        refresh_screen()
         console.print(get_text("yt_missing_dep"))
         console.print(get_text("press_enter"))
         console.input()
         return
 
-    clear_screen()
-    show_header()
+    refresh_screen()
     
     if HAS_RICH:
         console.print(Panel(get_text("local_media_desc"), title=get_text("local_media_title"), border_style=THEME_COLOR))
@@ -1409,6 +1465,7 @@ def tool_local_media_converter():
         return
         
     try:
+        import imageio_ffmpeg
         ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
         cmd = [
             ffmpeg_path, '-y', '-i', filepath,
@@ -1442,9 +1499,22 @@ def tool_local_media_converter():
 
 
 def tool_media_menu():
+    if not ensure_media_dependencies():
+        return
+        
+    if not check_ffmpeg_installed():
+        refresh_screen()
+        if HAS_RICH:
+            console.print(Panel(get_text("ffmpeg_warning_desc"), title=get_text("ffmpeg_warning_title"), border_style="yellow"))
+        else:
+            console.print(get_text("ffmpeg_warning_title"))
+            console.print(get_text("ffmpeg_warning_desc"))
+        console.print(get_text("press_enter"))
+        console.input()
+        return
+
     while True:
-        clear_screen()
-        show_header()
+        refresh_screen()
         
         menu_text = (
             f" [[bold {THEME_COLOR}]1[/]]" + get_text("media_opt_1") + "\n" +
@@ -1474,22 +1544,9 @@ def tool_media_menu():
 
 def main():
     load_config()
-    
-    # 1. Verificação do FFmpeg
-    if not check_ffmpeg_installed():
-        clear_screen()
-        show_header()
-        if HAS_RICH:
-            console.print(Panel(get_text("ffmpeg_warning_desc"), title=get_text("ffmpeg_warning_title"), border_style="yellow"))
-        else:
-            console.print(get_text("ffmpeg_warning_title"))
-            console.print(get_text("ffmpeg_warning_desc"))
-        console.print(get_text("press_enter"))
-        console.input()
         
     while True:
-        clear_screen()
-        show_header()
+        refresh_screen()
         
         menu_text = (
             f" [[bold {THEME_COLOR}]1[/]]" + get_text("menu_opt_1") + "\n" +
