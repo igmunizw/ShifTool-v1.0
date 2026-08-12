@@ -40,7 +40,26 @@ Abra o seu terminal e execute:
 ```
 curl -sSL https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh | bash
 ````
+No Linux, puxar rapidamente o terminal e digitar dois comandos já resolve tudo:
+
+    Vá na página de downloads e baixe o arquivo chamado apenas shiftool (sem o ".exe" no final).
+
+    Abra o seu terminal e vá até a pasta onde o arquivo caiu (geralmente cd Downloads).
+
+    Dê a permissão para o sistema entender que é um programa executável rodando o comando: chmod +x shiftool
+
+    Inicie a ferramenta rodando: ./shiftool
+
+    
 ### No Windows (PowerShell):
 Abra o PowerShell e execute:
 ```powershell
 irm https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1 | iex
+
+Acesse a página do projeto e role até a parte de baixo, na seção chamada Assets.
+
+    Clique no arquivo chamado shiftool.exe para fazer o download.
+
+    Abra a sua pasta de Downloads e dê dois cliques no arquivo.
+
+    Como este projeto é independente e de código aberto, o Windows pode exibir uma tela de proteção ao abrir a ferramenta pela primeira vez. Isso é normal. Clique em 'Mais informações' e 'Executar assim mesmo'.
