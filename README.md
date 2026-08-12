@@ -40,7 +40,3 @@ Abra o PowerShell e execute:
 ```powershell
 irm [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1](https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1) | iex
 
-### No Linux
-Abra o terminal e execute:
-curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh](https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh) | bash
-
