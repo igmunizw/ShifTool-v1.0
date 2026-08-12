@@ -33,15 +33,12 @@ Atualmente, o aplicativo possui suporte nativo para realizar o intercâmbio entr
 * Para o processamento local de mídias, o aplicativo gerencia dependências auxiliares como o imageio-ffmpeg.
 
 ## Como Instalar e Usar
-
 ### No Linux
 
 #### Opção 1: Instalação Rápida (Recomendado)
-
 Abra o seu terminal e execute:
-Bash
-````
-curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh](https://
+```bash
+curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh](https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh) |
 ````
 #### Opção 2: Download Manual
 
@@ -62,7 +59,7 @@ curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/instal
 #### Opção 1: Instalação Rápida (Recomendado)
 Abra o **PowerShell** e execute o comando abaixo:
 ```powershell
-irm [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1](https://raw.
+irm [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1](https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1) | iex
 ````
 
 #### Opção 2: Download Manual (.exe)
