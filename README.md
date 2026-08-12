@@ -31,7 +31,6 @@ Atualmente, o aplicativo possui suporte nativo para realizar o intercâmbio entr
 * O próprio aplicativo verifica, gerencia e oferece a instalação automática dos pacotes Python necessários (rich, yt-dlp, pymupdf, pillow, pandas, openpyxl, pypdf, etc.) na primeira execução.
 * Para conversão de documentos de texto complexos (.docx, .odt), é recomendada a instalação do LibreOffice no sistema operacional.
 * Para o processamento local de mídias, o aplicativo gerencia dependências auxiliares como o imageio-ffmpeg.
-## Como Instalar e Usar
 
 ## Como Instalar e Usar
 
