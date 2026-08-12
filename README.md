@@ -34,32 +34,41 @@ Atualmente, o aplicativo possui suporte nativo para realizar o intercâmbio entr
 
 ## Como Instalar e Usar
 
-### No Linux (Terminal):
+### No Linux
+
+#### Opção 1: Instalação Rápida (Recomendado)
 
 Abra o seu terminal e execute:
-```
-curl -sSL https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh | bash
+Bash
 ````
-No Linux, puxar rapidamente o terminal e digitar dois comandos já resolve tudo:
+curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh](https://
+````
+#### Opção 2: Download Manual
 
-    Vá na página de downloads e baixe o arquivo chamado apenas shiftool (sem o ".exe" no final).
+* **Acesse a página de Releases e baixe o arquivo shiftool.
 
-    Abra o seu terminal e vá até a pasta onde o arquivo caiu (geralmente cd Downloads).
+    Abra o terminal na pasta onde o arquivo foi salvo e dê permissão de execução:
+    Bash
 
-    Dê a permissão para o sistema entender que é um programa executável rodando o comando: chmod +x shiftool
+    chmod +x shiftool
 
-    Inicie a ferramenta rodando: ./shiftool
+    Inicie a ferramenta rodando:
+    Bash
 
+    ./shiftool
     
-### No Windows (PowerShell):
-Abra o PowerShell e execute:
+### No Windows
+
+#### Opção 1: Instalação Rápida (Recomendado)
+Abra o **PowerShell** e execute o comando abaixo:
 ```powershell
-irm https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1 | iex
+irm [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1](https://raw.
+````
 
-Acesse a página do projeto e role até a parte de baixo, na seção chamada Assets.
+#### Opção 2: Download Manual (.exe)
 
-    Clique no arquivo chamado shiftool.exe para fazer o download.
+* **Acesse a página de Releases do repositório e baixe o arquivo shiftool.exe.
 
-    Abra a sua pasta de Downloads e dê dois cliques no arquivo.
+    Dê dois cliques para rodar.
 
-    Como este projeto é independente e de código aberto, o Windows pode exibir uma tela de proteção ao abrir a ferramenta pela primeira vez. Isso é normal. Clique em 'Mais informações' e 'Executar assim mesmo'.
+  ⚠️ Se o Windows Defender exibir uma tela azul de proteção, clique em "Mais informações" e depois em "Executar assim mesmo".
