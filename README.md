@@ -38,7 +38,7 @@ Atualmente, o aplicativo possui suporte nativo para realizar o intercâmbio entr
 #### Opção 1: Instalação Rápida (Recomendado)
 Abra o seu terminal e execute:
 ```bash
-curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh](https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh) |
+curl -sSL https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.sh | bash
 ````
 #### Opção 2: Download Manual
 
@@ -59,7 +59,7 @@ curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/instal
 #### Opção 1: Instalação Rápida (Recomendado)
 Abra o **PowerShell** e execute o comando abaixo:
 ```powershell
-irm [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1](https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1) | iex
+irm https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1 | iex
 ````
 
 #### Opção 2: Download Manual (.exe)
