@@ -37,12 +37,12 @@ jobs:
       - name: Build with PyInstaller (Windows)
         if: matrix.target == 'windows'
         run: |
-          pyinstaller --onefile --noconsole --name shiftool shiftTool.py
+          pyinstaller --onefile --noconsole --name shiftool shifTool.py
 
       - name: Build with PyInstaller (Linux)
         if: matrix.target == 'linux'
         run: |
-          pyinstaller --onefile --name shiftool shiftTool.py
+          pyinstaller --onefile --name shiftool shifTool.py
 
       - name: Upload binaries to Release
         uses: softprops/action-gh-release@v2
