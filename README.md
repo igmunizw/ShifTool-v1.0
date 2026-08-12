@@ -45,7 +45,7 @@ curl -sSL [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/instal
 ````
 #### Opção 2: Download Manual
 
-* **Acesse a página de Releases e baixe o arquivo shiftool.
+* Acesse a página de Releases e baixe o arquivo shiftool.
 
     Abra o terminal na pasta onde o arquivo foi salvo e dê permissão de execução:
     Bash
@@ -67,7 +67,7 @@ irm [https://raw.githubusercontent.com/igmunizw/ShiftTool-v1.0/main/install.ps1]
 
 #### Opção 2: Download Manual (.exe)
 
-* **Acesse a página de Releases do repositório e baixe o arquivo shiftool.exe.
+* Acesse a página de Releases do repositório e baixe o arquivo shiftool.exe.
 
     Dê dois cliques para rodar.
 
